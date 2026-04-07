@@ -17,27 +17,14 @@
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html, body {
-  cursor: none;
   height: 100vh; overflow: hidden;
   background: var(--bg); color: #e8e8e8;
   font-family: var(--font-body); user-select: none;
 }
-button, .s-card, .click-btn, .exit-btn { cursor: none; }
+button, .s-card, .click-btn, .exit-btn { cursor: pointer; }
 
-/* Кастомный курсор — крестик */
-.cursor-fx {
-  position: fixed; pointer-events: none; z-index: 99999;
-  width: 22px; height: 22px;
-  transform: translate(-50%, -50%);
-  transition: transform 0.05s ease;
-}
-.cursor-fx::before, .cursor-fx::after {
-  content:''; position:absolute; background:var(--accent); border-radius:2px;
-}
-.cursor-fx::before { width:2px; height:100%; left:50%; top:0; transform:translateX(-50%); }
-.cursor-fx::after  { width:100%; height:2px; top:50%; left:0; transform:translateY(-50%); }
-.cursor-fx.clicking { transform:translate(-50%,-50%) scale(1.5); }
-.cursor-fx.clicking::before, .cursor-fx.clicking::after { background:var(--accent2); }
+/* Кастомный курсор — скрыт */
+.cursor-fx { display: none; }
 
 /* Статус-бар */
 .status-bar {
@@ -75,19 +62,29 @@ button, .s-card, .click-btn, .exit-btn { cursor: none; }
   height:100vh; padding-top:56px;
 }
 
+/* Анимированный фон */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 /* Зона врага */
 .game-area {
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  background:radial-gradient(circle at 50% 50%, rgba(0,255,204,0.04) 0%, transparent 70%);
+  background:radial-gradient(circle at 50% 50%, rgba(0,255,204,0.06) 0%, transparent 70%);
   position:relative; overflow:hidden;
 }
 .game-area::before {
   content:''; position:absolute; inset:0;
   background:
-    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.02) 40px),
-    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.02) 40px);
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.015) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.015) 40px);
   pointer-events:none;
+  z-index:1;
 }
+.enemy-wrapper { position: relative; z-index: 2; }
 
 .enemy-wrapper { position:relative; display:flex; flex-direction:column; align-items:center; gap:12px; }
 
@@ -191,6 +188,63 @@ button, .s-card, .click-btn, .exit-btn { cursor: none; }
 .price-tag { font-family:var(--font-display); font-size:0.62rem; color:var(--accent); white-space:nowrap; text-align:right; }
 .price-inc { font-size:0.55rem; color:rgba(0,255,204,0.4); text-align:right; margin-top:1px; }
 
+/* Кликабельные объекты на фоне */
+.bg-object {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: none;
+  pointer-events: all;
+  animation: obj-appear 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  filter: drop-shadow(0 0 8px currentColor);
+  transition: transform 0.1s;
+}
+.bg-object:hover { transform: scale(1.25) !important; }
+.bg-object:active { transform: scale(0.9) !important; }
+.bg-object-icon {
+  font-size: 2rem;
+  line-height: 1;
+  animation: obj-bob 2s ease-in-out infinite;
+}
+.bg-object-label {
+  font-family: var(--font-display);
+  font-size: 0.4rem;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+.bg-object.rare .bg-object-icon { animation: obj-spin 1.5s linear infinite; font-size: 2.4rem; }
+.bg-object.collected {
+  pointer-events: none;
+  animation: obj-collect 0.35s ease forwards;
+}
+@keyframes obj-appear {
+  0%   { opacity:0; transform:scale(0) rotate(-30deg); }
+  100% { opacity:1; transform:scale(1) rotate(0deg); }
+}
+@keyframes obj-bob {
+  0%,100% { transform:translateY(0); }
+  50%     { transform:translateY(-7px); }
+}
+@keyframes obj-spin {
+  0%   { transform:rotate(0deg) scale(1); }
+  50%  { transform:rotate(180deg) scale(1.1); }
+  100% { transform:rotate(360deg) scale(1); }
+}
+@keyframes obj-collect {
+  0%   { opacity:1; transform:scale(1); }
+  40%  { opacity:0.8; transform:scale(1.5) rotate(15deg); }
+  100% { opacity:0; transform:scale(0.2) rotate(45deg); }
+}
+@keyframes obj-timeout {
+  0%   { opacity:1; }
+  70%  { opacity:1; }
+  100% { opacity:0; transform:scale(0.5); }
+}
+
 /* Плавающие числа */
 .float-num {
   position:fixed; pointer-events:none; z-index:1000;
@@ -263,6 +317,7 @@ button, .s-card, .click-btn, .exit-btn { cursor: none; }
 </head>
 <body>
 
+<canvas id="bg-canvas"></canvas>
 <div class="cursor-fx" id="cursor-fx"></div>
 
 <!-- Экран победы -->
@@ -292,7 +347,7 @@ button, .s-card, .click-btn, .exit-btn { cursor: none; }
   <div class="game-area">
     <div class="enemy-wrapper">
       <div class="enemy-name-tag" id="enemy-name-tag">ASKHAB TAMAEV</div>
-      <img src="Askhab.png" class="enemy-img" id="enemy-img" draggable="false">
+      <img src="" class="enemy-img" id="enemy-img" draggable="false">
       <div class="hp-wrapper">
         <div class="hp-bar-bg"><div class="hp-bar-fill" id="enemy-fill"></div></div>
         <div class="hp-stats"><span id="cur-hp">0</span> / <span id="max-hp">0</span> ₽</div>
@@ -314,14 +369,29 @@ button, .s-card, .click-btn, .exit-btn { cursor: none; }
 </div>
 
 <script>
-// ─── Кастомный курсор ────────────────────────────────────────────────
+const MOB = window.matchMedia('(pointer: coarse)').matches;
+
+// ─── Кастомный курсор (только десктоп) ──────────────────────────────
 const cursorEl = document.getElementById('cursor-fx');
-document.addEventListener('mousemove', e => {
-  cursorEl.style.left = e.clientX + 'px';
-  cursorEl.style.top  = e.clientY + 'px';
-});
-document.addEventListener('mousedown', () => cursorEl.classList.add('clicking'));
-document.addEventListener('mouseup',   () => cursorEl.classList.remove('clicking'));
+if (MOB) {
+  cursorEl.style.display = 'none';
+} else {
+  document.addEventListener('mousemove', e => {
+    cursorEl.style.left = e.clientX + 'px';
+    cursorEl.style.top  = e.clientY + 'px';
+  });
+  document.addEventListener('mousedown', () => cursorEl.classList.add('clicking'));
+  document.addEventListener('mouseup',   () => cursorEl.classList.remove('clicking'));
+}
+
+// Touch на кнопке клика — без задержки 300мс
+if (MOB) {
+  document.getElementById('click-btn').addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    handleClick({ clientX: t.clientX, clientY: t.clientY });
+  }, { passive: false });
+}
 
 // ─── Web Audio — звук клика ───────────────────────────────────────────
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -376,62 +446,75 @@ function playWinSound() {
   } catch(e) {}
 }
 
-// Разблокировка AudioContext на первом взаимодействии
-document.addEventListener('click', () => {
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-}, { once: true });
+// Разблокировка AudioContext
+document.addEventListener('click',      () => { if (audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true });
+document.addEventListener('touchstart', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true });
 
 const ENEMIES = [
-  { img: "Askhab.png",             name: "ASKHAB TAMAEV", price: 1000,   sounds: ["Ashab.mp3",        "Ashab.mp3",        "Ashab.mp3"]        },
-  { img: "volga.jpg",              name: "MELLSTROY",     price: 12000,  sounds: ["Mellstroysound.mp3","Mellstroysound.mp3","Mellstroysound.mp3"] },
-  { img: "sergey-mavrodi-big.jpg", name: "МММ",           price: 120000, sounds: ["Mavrodi.mp3",       "Mavrodi.mp3",      "Mavrodi.mp3"]      },
+  { imgNormal:'askhab_normal.jpg', imgHurt:'askhab_hurt.jpg',  imgSwapAt:0.50, name:'ASKHAB TAMAEV', price:15000,   soundNormal:'askhab_normal.mp3', soundHurt:'askhab_hurt.mp3' },
+  { imgNormal:'mell_normal.jpg',   imgHurt:'mell_hurt.jpg',    imgSwapAt:0.50, name:'MELLSTROY',     price:120000,  soundNormal:'mell_normal.mp3',   soundHurt:'mell_hurt.mp3'   },
+  { imgNormal:'mavrodi_normal.jpg',imgHurt:'mavrodi_hurt.jpg', imgSwapAt:0.50, name:'МММ',           price:1500000, soundNormal:'mavrodi_normal.mp3',soundHurt:'mavrodi_hurt.mp3'},
 ];
 
 // Предзагрузка аудио
 const audioCache = {};
 function getAudio(src) {
-  if (!audioCache[src]) {
-    audioCache[src] = new Audio(src);
-    audioCache[src].preload = 'auto';
-  }
+  if (!audioCache[src]) { audioCache[src] = new Audio(src); audioCache[src].preload = 'auto'; }
   return audioCache[src];
 }
-// Прогрев кэша
-ENEMIES.forEach(e => e.sounds.forEach(s => getAudio(s)));
+ENEMIES.forEach(e => { getAudio(e.soundNormal); getAudio(e.soundHurt); });
 
 let G = {
   money: 0, clickPower: 1,
-  enemyIndex: 0, enemyValue: 1000, enemyMax: 1000,
+  enemyIndex: 0, enemyValue: ENEMIES[0].price, enemyMax: ENEMIES[0].price,
   gameOver: false,
-  soundTriggered: [false, false, false], // 75%, 50%, 25%
   items: {
-    i1:  { name: 'Студент',         desc: 'Кликает за копейки, но их много',          price: 20,      inc: 1,      count: 0, icon: '👨‍💻', clickBonus: 0 },
-    i2:  { name: 'Бот-сеть',       desc: 'Автоматические клики 24/7',                price: 250,     inc: 15,     count: 0, icon: '🤖',  clickBonus: 0 },
-    i3:  { name: 'Майнер',         desc: 'Добывает рубли на видеокарте',             price: 1200,    inc: 80,     count: 0, icon: '⛏️',  clickBonus: 1 },
-    i4:  { name: 'Серверная',      desc: 'Целый дата-центр работает на тебя',        price: 6000,    inc: 400,    count: 0, icon: '🖥️',  clickBonus: 2 },
-    i5:  { name: 'Крипто-кошелёк', desc: 'Пассивный доход с волатильности рынка',    price: 18000,   inc: 1200,   count: 0, icon: '💰',  clickBonus: 3 },
-    i6:  { name: 'ИИ-торговец',    desc: 'Алгоритм торгует лучше людей',             price: 55000,   inc: 4000,   count: 0, icon: '🧠',  clickBonus: 5 },
-    i7:  { name: 'Офшор',          desc: 'Деньги текут туда, где нет налогов',        price: 180000,  inc: 14000,  count: 0, icon: '🏝️',  clickBonus: 10 },
-    i8:  { name: 'Медиа-империя',  desc: 'Подписчики платят сами не зная зачем',     price: 600000,  inc: 50000,  count: 0, icon: '📺',  clickBonus: 20 },
-    i9:  { name: 'Пирамида МММ',   desc: 'Классика жанра. Работает пока работает',   price: 2000000, inc: 180000, count: 0, icon: '🔺',  clickBonus: 50 },
-    i10: { name: 'Центробанк',     desc: 'Зачем зарабатывать, если можно печатать',  price: 8000000, inc: 700000, count: 0, icon: '🏦',  clickBonus: 150 },
+    i1:  { name:'Студент',        desc:'⚡ +2 за клик · копейки пассивно',        price:20,      inc:1,      count:0, icon:'👨‍💻', clickBonus:2    },
+    i2:  { name:'Бот-сеть',       desc:'⚡ +5 за клик · авто-тапы 24/7',          price:200,     inc:5,      count:0, icon:'🤖',  clickBonus:5    },
+    i3:  { name:'Майнер',         desc:'⚡ +15 за клик · добыча на GPU',           price:1000,    inc:20,     count:0, icon:'⛏️',  clickBonus:15   },
+    i4:  { name:'Серверная',      desc:'⚡ +40 за клик · дата-центр на тебя',      price:5000,    inc:80,     count:0, icon:'🖥️',  clickBonus:40   },
+    i5:  { name:'Крипто-кошелёк', desc:'⚡ +100 за клик · волатильность = профит', price:15000,   inc:200,    count:0, icon:'💰',  clickBonus:100  },
+    i6:  { name:'ИИ-торговец',    desc:'⚡ +250 за клик · алго бьёт рынок',        price:50000,   inc:600,    count:0, icon:'🧠',  clickBonus:250  },
+    i7:  { name:'Офшор',          desc:'⚡ +600 за клик · деньги где тепло',        price:160000,  inc:2000,   count:0, icon:'🏝️',  clickBonus:600  },
+    i8:  { name:'Медиа-империя',  desc:'⚡ +1500 за клик · подписчики платят',      price:550000,  inc:7000,   count:0, icon:'📺',  clickBonus:1500 },
+    i9:  { name:'Пирамида МММ',   desc:'⚡ +4000 за клик · работает пока работает', price:1800000, inc:25000,  count:0, icon:'🔺',  clickBonus:4000 },
+    i10: { name:'Центробанк',     desc:'⚡ +10000 за клик · просто печатай',        price:7000000, inc:100000, count:0, icon:'🏦',  clickBonus:10000},
   }
 };
 
-const THRESHOLDS = [0.75, 0.50, 0.25]; // индексы 0,1,2
+// Инициализируем первого врага
+document.getElementById('enemy-img').src = ENEMIES[0].imgNormal;
+document.getElementById('enemy-name-tag').textContent = ENEMIES[0].name;
 
+// Звуки и картинки по порогам (80% и 40%)
+let sf = { s1: false, s2: false, img: false };
+function stopEnemySounds() {
+  ENEMIES.forEach(e => [e.soundNormal, e.soundHurt].forEach(s => {
+    if (audioCache[s]) { audioCache[s].pause(); audioCache[s].currentTime = 0; }
+  }));
+}
+function playOneShot(src) {
+  if (!src) return;
+  stopEnemySounds();
+  const a = getAudio(src); a.loop = false; a.currentTime = 0; a.play().catch(() => {});
+}
+function switchEnemyImg(enemy) {
+  const img = document.getElementById('enemy-img');
+  img.style.filter = 'brightness(3) saturate(0)';
+  img.style.transform = 'scale(1.06) rotate(-2deg)';
+  setTimeout(() => {
+    img.src = enemy.imgHurt;
+    img.style.filter = img.style.transform = '';
+    img.style.borderColor = 'rgba(255,40,40,0.9)';
+    img.style.boxShadow = '0 0 50px rgba(255,0,0,0.6)';
+  }, 180);
+}
 function checkSoundThresholds() {
-  const enemy = ENEMIES[G.enemyIndex];
-  if (!enemy) return;
-  const pct = G.enemyValue / G.enemyMax;
-  THRESHOLDS.forEach((thr, i) => {
-    if (!G.soundTriggered[i] && pct <= thr) {
-      G.soundTriggered[i] = true;
-      const audio = getAudio(enemy.sounds[i]);
-      audio.currentTime = 0;
-      audio.play().catch(() => {});
-    }
-  });
+  const e = ENEMIES[G.enemyIndex]; if (!e || G.gameOver) return;
+  const p = G.enemyValue / G.enemyMax;
+  if (!sf.s1  && p <= 0.80) { sf.s1  = true; playOneShot(e.soundNormal); }
+  if (!sf.s2  && p <= 0.40) { sf.s2  = true; playOneShot(e.soundHurt);   }
+  if (!sf.img && p <= (e.imgSwapAt || 0.50)) { sf.img = true; switchEnemyImg(e); }
 }
 
 function handleClick(e) {
@@ -472,10 +555,11 @@ function nextEnemy() {
     G.enemyIndex++;
     const next = ENEMIES[G.enemyIndex];
     G.enemyMax   = next.price;
-    img.src      = next.img;
+    G.enemyValue = next.price;
+    img.src      = next.imgNormal;
+    img.style.borderColor = img.style.boxShadow = img.style.filter = img.style.transform = '';
     document.getElementById('enemy-name-tag').textContent = next.name;
-    G.enemyValue = G.enemyMax;
-    G.soundTriggered = [false, false, false];
+    sf = { s1: false, s2: false, img: false };
     img.classList.remove('dead');
     killingInProgress = false;
     updateUI();
@@ -533,6 +617,7 @@ function spawnFloat(x, y, txt, big = false) {
 }
 
 let prevMoney = 0;
+let renderShopThrottle = 0;
 function updateUI() {
   const bal = document.getElementById('balance');
   bal.textContent = Math.floor(G.money).toLocaleString('ru-RU');
@@ -551,37 +636,70 @@ function updateUI() {
   document.getElementById('click-power-label').textContent = `+${G.clickPower} ЗА КЛИК`;
   let cps = Object.values(G.items).reduce((s, i) => s + i.count * i.inc, 0);
   document.getElementById('cps-badge').textContent = `${cps} ₽/с`;
-  renderShop();
+
+  // Обновляем магазин не чаще раза в 200мс чтобы не ломать клики
+  const now = Date.now();
+  if (now - renderShopThrottle > 200) {
+    renderShopThrottle = now;
+    renderShop();
+  }
 }
 
 function renderShop() {
   const container = document.getElementById('shop-container');
-  container.innerHTML = '';
-  Object.entries(G.items).forEach(([id, item]) => {
+  const ids = Object.keys(G.items);
+
+  // Строим карточки один раз
+  if (container.children.length !== ids.length) {
+    container.innerHTML = '';
+    ids.forEach(id => {
+      const item = G.items[id];
+      const div = document.createElement('div');
+      div.id = 'scard-' + id;
+      div.className = 's-card cant-afford';
+      // На мобиле используем touchend с preventDefault чтобы не срабатывало дважды (touch + click)
+      if (MOB) {
+        div.addEventListener('touchend', e => { e.preventDefault(); buyItem(id); }, { passive: false });
+      } else {
+        div.addEventListener('click', () => buyItem(id));
+      }
+
+      const priceStr = () => {
+        const p = G.items[id].price;
+        return p >= 1000000 ? (p/1000000).toFixed(1)+'М' : p >= 1000 ? Math.round(p/1000)+'К' : p;
+      };
+
+      div.innerHTML = `
+        <div class="s-icon">${item.icon}</div>
+        <div class="s-info">
+          <div class="s-name">${item.name} <span class="s-count" style="color:rgba(0,255,204,0.4);font-size:0.48rem;">×0</span></div>
+          <div class="s-desc">${item.desc}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div class="s-price price-tag">-- ₽</div>
+          <div class="price-inc" style="color:rgba(255,0,170,0.6)">⚡+${item.clickBonus}/клик</div>
+          <div class="price-inc">+${item.inc >= 1000 ? Math.round(item.inc/1000)+'К' : item.inc} ₽/с</div>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  // Обновляем только динамические части
+  ids.forEach(id => {
+    const item = G.items[id];
+    const div = document.getElementById('scard-' + id);
+    if (!div) return;
+
     const afford = G.money >= item.price;
-    const div = document.createElement('div');
-    div.className = 's-card' + (afford ? '' : ' cant-afford');
-    const clickTag = item.clickBonus
-      ? `<span style="color:rgba(255,0,170,0.65);font-size:0.48rem;"> ⚡+${item.clickBonus}/клик</span>`
-      : '';
+    div.classList.toggle('cant-afford', !afford);
+
     const priceStr = item.price >= 1000000
       ? (item.price/1000000).toFixed(1)+'М'
-      : item.price >= 1000
-      ? Math.round(item.price/1000)+'К'
-      : item.price;
-    div.innerHTML = `
-      <div class="s-icon">${item.icon}</div>
-      <div class="s-info">
-        <div class="s-name">${item.name} <span style="color:rgba(0,255,204,0.4);font-size:0.48rem;">×${item.count}</span>${clickTag}</div>
-        <div class="s-desc">${item.desc}</div>
-      </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <div class="price-tag">${priceStr} ₽</div>
-        <div class="price-inc">+${item.inc >= 1000 ? Math.round(item.inc/1000)+'К' : item.inc} ₽/с</div>
-      </div>
-    `;
-    if (afford) div.onclick = () => buyItem(id);
-    container.appendChild(div);
+      : item.price >= 1000 ? Math.round(item.price/1000)+'К' : item.price;
+
+    div.querySelector('.s-count').textContent = '×' + item.count;
+    div.querySelector('.s-price').textContent = priceStr + ' ₽';
   });
 }
 
@@ -591,15 +709,15 @@ function buyItem(id) {
   G.money -= item.price;
   item.count++;
   item.price = Math.floor(item.price * 1.3);
-  // Сила клика = 1 + сумма clickBonus * count каждого улучшения
   G.clickPower = 1 + Object.values(G.items).reduce((s, i) => s + i.count * (i.clickBonus || 0), 0);
-  spawnFloat(window.innerWidth / 2, window.innerHeight * 0.65, `${item.icon} куплен!`, true);
+  spawnFloat(window.innerWidth / 2, window.innerHeight * 0.65, `⚡ +${item.clickBonus} к клику!`, true);
+  renderShopThrottle = 0;
   updateUI();
 }
 
 setInterval(() => {
   if (G.gameOver) return;
-  const inc = Object.values(G.items).reduce((s, i) => s + i.count * i.inc, 0);
+  const inc = Object.values(G.items).reduce((s, i) => s + i.count * i.inc, 0) + (G._jokeInc || 0);
   if (inc > 0) {
     const tick = inc / 10;
     G.money      += tick;
@@ -609,6 +727,199 @@ setInterval(() => {
     updateUI();
   }
 }, 100);
+
+// ─── Анимированный фон ──────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const PCOUNT = MOB ? 20 : 70;
+  const particles = Array.from({ length: PCOUNT }, () => ({
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+    r: Math.random() * 1.5 + 0.3,
+    vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
+    alpha: Math.random() * 0.5 + 0.1, pulse: Math.random() * Math.PI * 2,
+  }));
+
+  // Матрица только на десктопе (слишком тяжело для мобила)
+  const COL_SIZE = 22;
+  const cols = MOB ? [] : Array.from({ length: Math.ceil(window.innerWidth / COL_SIZE) }, (_, i) => ({
+    x: i * COL_SIZE + 11, y: Math.random() * -600,
+    speed: 0.4 + Math.random() * 0.8,
+    chars: Array.from({ length: 20 }, () => Math.random() > 0.5
+      ? String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96))
+      : Math.floor(Math.random() * 10).toString()),
+    alpha: 0.05 + Math.random() * 0.07,
+    len: 8 + Math.floor(Math.random() * 10),
+  }));
+
+  let frame = 0;
+  function animate() {
+    frame++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!MOB) {
+      ctx.font = '11px monospace';
+      cols.forEach(col => {
+        col.y += col.speed;
+        if (col.y > canvas.height + col.len * 11) { col.y = -col.len * 16; col.speed = 0.4 + Math.random() * 0.8; }
+        if (Math.random() < 0.015) {
+          const idx = Math.floor(Math.random() * col.chars.length);
+          col.chars[idx] = Math.random() > 0.5 ? String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96)) : Math.floor(Math.random() * 10).toString();
+        }
+        for (let k = 0; k < col.len; k++) {
+          const ky = col.y - k * 11;
+          if (ky < 0 || ky > canvas.height) continue;
+          const fade = 1 - k / col.len;
+          ctx.fillStyle = k === 0 ? `rgba(200,255,240,${col.alpha * 4 * fade})` : `rgba(0,255,204,${col.alpha * fade})`;
+          ctx.fillText(col.chars[k % col.chars.length], col.x, ky);
+        }
+      });
+
+      // Связи O(n²) — только на десктопе
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 120) {
+            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(0,255,204,${(1 - dist/120) * 0.06})`; ctx.lineWidth = 0.5; ctx.stroke();
+          }
+        }
+      }
+    }
+
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.pulse += 0.03;
+      if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
+      if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(0,255,204,${p.alpha * (0.6 + 0.4 * Math.sin(p.pulse))})`; ctx.fill();
+    });
+
+    if (!MOB) {
+      const lineY = (frame * 0.5) % canvas.height;
+      const grad = ctx.createLinearGradient(0, lineY, canvas.width, lineY);
+      grad.addColorStop(0,'transparent'); grad.addColorStop(0.4,'rgba(0,255,204,0.04)');
+      grad.addColorStop(0.6,'rgba(0,255,204,0.04)'); grad.addColorStop(1,'transparent');
+      ctx.fillStyle = grad; ctx.fillRect(0, lineY, canvas.width, 1);
+    }
+
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+// ─── Кликабельные объекты на фоне ──────────────────────────────────
+const BG_OBJECTS = [
+  { icon:'💰', label:'+50 ₽',        color:'#ffd700', rare:false, bonus:{ type:'money', val:50  } },
+  { icon:'💰', label:'+100 ₽',       color:'#ffd700', rare:false, bonus:{ type:'money', val:100 } },
+  { icon:'💎', label:'+500 ₽',       color:'#00eeff', rare:false, bonus:{ type:'money', val:500 } },
+  { icon:'💎', label:'+300 ₽',       color:'#00eeff', rare:false, bonus:{ type:'money', val:300 } },
+  { icon:'⚡',  label:'+5 клик/10с', color:'#ffee00', rare:false, bonus:{ type:'click', val:5,  dur:10 } },
+  { icon:'⚡',  label:'+10 клик/8с', color:'#ffee00', rare:false, bonus:{ type:'click', val:10, dur:8  } },
+  { icon:'🔋', label:'+20₽/с 15с',   color:'#00ffcc', rare:false, bonus:{ type:'cps',   val:20, dur:15 } },
+  { icon:'🔋', label:'+50₽/с 10с',   color:'#00ffcc', rare:false, bonus:{ type:'cps',   val:50, dur:10 } },
+  { icon:'📦', label:'+200 ₽',       color:'#ff8c00', rare:false, bonus:{ type:'money', val:200 } },
+  { icon:'🎰', label:'ДЖЕКПОТ!',     color:'#ff00aa', rare:true,  bonus:{ type:'money', val:1000} },
+  { icon:'🚀', label:'+15 клик/12с', color:'#ff00aa', rare:true,  bonus:{ type:'click', val:15, dur:12 } },
+  { icon:'👑', label:'+1000 ₽',      color:'#ffd700', rare:true,  bonus:{ type:'money', val:1000} },
+  { icon:'🏆', label:'+200₽/с 8с',   color:'#ffd700', rare:true,  bonus:{ type:'cps',   val:200,dur:8  } },
+  { icon:'💵', label:'+75 ₽',        color:'#7fff00', rare:false, bonus:{ type:'money', val:75  } },
+  { icon:'🪙', label:'+25 ₽',        color:'#ffd700', rare:false, bonus:{ type:'money', val:25  } },
+];
+
+let activeObjs = [];
+let objSpawnTimer = null;
+
+function getSpawnZone() {
+  // Спавним только в левой и правой полосах, не перекрывая центр
+  const statusH = 60;
+  const shopH   = 175;
+  const usableH = window.innerHeight - statusH - shopH - 20;
+  const side    = Math.random() < 0.5 ? 'left' : 'right';
+  const zoneW   = Math.min(window.innerWidth * 0.22, 130);
+  let x;
+  if (side === 'left') {
+    x = 10 + Math.random() * (zoneW - 50);
+  } else {
+    x = window.innerWidth - 60 - Math.random() * (zoneW - 50);
+  }
+  const y = statusH + 10 + Math.random() * (usableH - 60);
+  return { x, y };
+}
+
+function spawnBgObject() {
+  if (G.gameOver || MOB) return;
+  if (activeObjs.length >= 4) { scheduleObj(); return; }
+
+  // Редкие объекты появляются реже
+  const pool = Math.random() < 0.15
+    ? BG_OBJECTS.filter(o => o.rare)
+    : BG_OBJECTS.filter(o => !o.rare);
+  const def = pool[Math.floor(Math.random() * pool.length)];
+  const pos = getSpawnZone();
+
+  const el = document.createElement('div');
+  el.className = 'bg-object' + (def.rare ? ' rare' : '');
+  el.innerHTML = `<span class="bg-object-icon">${def.icon}</span><span class="bg-object-label" style="color:${def.color}">${def.label}</span>`;
+  el.style.left = pos.x + 'px';
+  el.style.top  = pos.y + 'px';
+  el.style.color = def.color;
+  document.body.appendChild(el);
+  activeObjs.push(el);
+
+  // Таймаут исчезновения: 6–10 сек
+  const lifetime = 6000 + Math.random() * 4000;
+  el.style.animation = `obj-appear 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards, obj-timeout ${lifetime/1000}s ease forwards`;
+
+  const autoRemove = setTimeout(() => removeBgObj(el), lifetime);
+  el._ar = autoRemove;
+
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearTimeout(el._ar);
+    applyObjBonus(def.bonus, e.clientX, e.clientY);
+    el.classList.add('collected');
+    setTimeout(() => removeBgObj(el), 380);
+  });
+
+  scheduleObj();
+}
+
+function removeBgObj(el) {
+  activeObjs = activeObjs.filter(o => o !== el);
+  el.remove();
+}
+
+function scheduleObj() {
+  clearTimeout(objSpawnTimer);
+  const delay = 2500 + Math.random() * 4000; // 2.5–6.5 сек
+  objSpawnTimer = setTimeout(spawnBgObject, delay);
+}
+
+function applyObjBonus(bonus, cx, cy) {
+  if (bonus.type === 'money') {
+    G.money += bonus.val;
+    spawnFloat(cx, cy, `+${bonus.val} ₽`, true);
+    updateUI();
+  } else if (bonus.type === 'click') {
+    G.clickPower += bonus.val;
+    spawnFloat(cx, cy, `⚡ +${bonus.val} КЛИК!`, true);
+    updateUI();
+    setTimeout(() => { G.clickPower -= bonus.val; updateUI(); }, bonus.dur * 1000);
+  } else if (bonus.type === 'cps') {
+    G._jokeInc = (G._jokeInc || 0) + bonus.val;
+    spawnFloat(cx, cy, `📈 +${bonus.val}₽/с`, true);
+    setTimeout(() => { G._jokeInc = Math.max(0, (G._jokeInc || 0) - bonus.val); }, bonus.dur * 1000);
+  }
+}
+
+// Первый спавн через 2 сек
+setTimeout(spawnBgObject, 2000);
 
 updateUI();
 </script>

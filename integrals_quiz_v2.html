@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Первообразные — Викторина</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #09090b;
+    --surface: #18181b;
+    --surface2: #27272a;
+    --border: #3f3f46;
+    --accent: #a78bfa;
+    --accent2: #818cf8;
+    --green: #34d399;
+    --red: #f87171;
+    --text: #fafafa;
+    --muted: #a1a1aa;
+  }
+
+  body {
+    font-family: 'Unbounded', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px;
+    background-image:
+      radial-gradient(ellipse at 10% 0%, rgba(167,139,250,0.12) 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(129,140,248,0.08) 0%, transparent 55%);
+  }
+
+  .wrap { width: 100%; max-width: 780px; }
+
+  .header { text-align: center; margin-bottom: 44px; }
+  .header .tag {
+    display: inline-block;
+    background: rgba(167,139,250,0.15);
+    border: 1px solid rgba(167,139,250,0.3);
+    color: var(--accent);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 16px;
+  }
+  .header h1 { font-size: clamp(22px, 5vw, 38px); font-weight: 900; letter-spacing: -1px; line-height: 1.15; }
+  .header h1 span { color: var(--accent); }
+  .header p { margin-top: 10px; font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+  .prog-wrap { margin-bottom: 28px; }
+  .prog-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+  .prog-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 2px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 36px 32px;
+    margin-bottom: 16px;
+    animation: slideUp 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .card-num { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+  .card-divider { flex: 1; height: 1px; background: var(--border); }
+
+  .question-label { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; letter-spacing: 1px; }
+
+  .formula-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 20px;
+    text-align: center;
+    font-size: clamp(15px, 2.5vw, 20px);
+    margin-bottom: 24px;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 520px) { .options { grid-template-columns: 1fr; } }
+
+  .option {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 12px;
+    cursor: pointer;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    text-align: center;
+    transition: all 0.2s ease;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    line-height: 1.5;
+  }
+  .option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(167,139,250,0.07);
+    transform: translateY(-2px);
+  }
+  .option:disabled { cursor: default; transform: none !important; }
+  .option.correct { border-color: var(--green) !important; background: rgba(52,211,153,0.1) !important; color: var(--green); }
+  .option.wrong   { border-color: var(--red)   !important; background: rgba(248,113,113,0.1) !important; color: var(--red); }
+  .option.dimmed  { opacity: 0.25; }
+
+  /* last option spans full width if odd count */
+  .option:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+  .feedback {
+    margin-top: 18px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    display: none;
+    animation: fadeIn 0.3s ease;
+    line-height: 1.6;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .feedback.show { display: block; }
+  .feedback.ok  { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: var(--green); }
+  .feedback.err { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: var(--red); }
+
+  .btn-next {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none;
+    border-radius: 14px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+    display: none;
+    letter-spacing: 0.5px;
+  }
+  .btn-next:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(167,139,250,0.3); }
+  .btn-next.show { display: block; animation: fadeIn 0.3s ease; }
+
+  /* Result */
+  .result { display: none; text-align: center; animation: slideUp 0.5s ease; }
+  .result.show { display: block; }
+
+  .result-ring {
+    width: 170px;
+    height: 170px;
+    margin: 0 auto 28px;
+    position: relative;
+  }
+  .result-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 12; }
+  .ring-fill { fill: none; stroke: url(#grad); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .ring-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 900;
+  }
+
+  .result h2 { font-size: clamp(20px, 4vw, 30px); font-weight: 900; margin-bottom: 8px; }
+  .result .sub { color: var(--muted); font-size: 13px; font-family: 'JetBrains Mono', monospace; margin-bottom: 32px; }
+
+  .btn-restart {
+    padding: 16px 44px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none;
+    border-radius: 14px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-restart:hover { opacity: 0.9; transform: translateY(-2px); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="tag">Математика</div>
+    <h1>Таблица <span>первообразных</span></h1>
+    <p>// 18 формул · 7 вариантов · случайный порядок</p>
+  </div>
+
+  <div id="quiz-section">
+    <div class="prog-wrap">
+      <div class="prog-info">
+        <span id="prog-text">1 / 18</span>
+        <span id="score-text">0 баллов</span>
+      </div>
+      <div class="prog-track">
+        <div class="prog-fill" id="prog-fill" style="width:5.5%"></div>
+      </div>
+    </div>
+
+    <div class="card" id="card">
+      <div class="card-top">
+        <div class="card-num" id="q-num">№ 1</div>
+        <div class="card-divider"></div>
+      </div>
+      <div class="question-label">∫ ... dx = ?</div>
+      <div class="formula-box" id="q-formula"></div>
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Следующая →</button>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-ring">
+      <svg width="170" height="170" viewBox="0 0 170 170">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#818cf8"/>
+            <stop offset="100%" style="stop-color:#a78bfa"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-bg" cx="85" cy="85" r="72"/>
+        <circle class="ring-fill" id="ring-fill" cx="85" cy="85" r="72"
+          stroke-dasharray="452.4" stroke-dashoffset="452.4"/>
+      </svg>
+      <div class="ring-inner" id="res-num"></div>
+    </div>
+    <h2 id="res-msg"></h2>
+    <div class="sub" id="res-sub"></div>
+    <button class="btn-restart" onclick="restart()">Начать заново</button>
+  </div>
+</div>
+
+<script>
+// ── ВСЕ 18 ФОРМУЛ ──────────────────────────────────────────────────────────
+const ALL = [
+  {
+    q: `\\int x^n \\, dx`,
+    correct: `\\dfrac{x^{n+1}}{n+1} + C`,
+    wrong: [
+      `n x^{n-1} + C`,
+      `\\dfrac{x^n}{n} + C`,
+      `x^{n+1} + C`,
+      `\\dfrac{x^{n-1}}{n-1} + C`,
+      `\\dfrac{x^{n+2}}{n+2} + C`,
+      `(n+1)x^{n+1} + C`,
+      `\\dfrac{x^n}{n+1} + C`,
+    ]
+  },
+  {
+    q: `\\int \\dfrac{1}{x} \\, dx`,
+    correct: `\\ln|x| + C`,
+    wrong: [
+      `-\\dfrac{1}{x^2} + C`,
+      `\\dfrac{1}{x^2} + C`,
+      `\\ln(x^2) + C`,
+      `e^x + C`,
+      `\\dfrac{\\ln x}{x} + C`,
+      `-\\ln|x| + C`,
+      `\\dfrac{1}{\\ln x} + C`,
+    ]
+  },
+  {
+    q: `\\int e^x \\, dx`,
+    correct: `e^x + C`,
+    wrong: [
+      `e^{x+1} + C`,
+      `x e^x + C`,
+      `\\dfrac{e^x}{x} + C`,
+      `\\ln(e^x) + C`,
+      `e^{x-1} + C`,
+      `\\dfrac{e^{x+1}}{x+1} + C`,
+      `xe^{x-1} + C`,
+    ]
+  },
+  {
+    q: `\\int a^x \\, dx`,
+    correct: `\\dfrac{a^x}{\\ln a} + C`,
+    wrong: [
+      `a^x \\cdot \\ln a + C`,
+      `\\dfrac{a^{x+1}}{x+1} + C`,
+      `\\dfrac{\\ln a}{a^x} + C`,
+      `x a^x + C`,
+      `\\dfrac{a^x}{a} + C`,
+      `\\dfrac{a^{x+1}}{\\ln a} + C`,
+      `a^x \\ln x + C`,
+    ]
+  },
+  {
+    q: `\\int \\sin x \\, dx`,
+    correct: `-\\cos x + C`,
+    wrong: [
+      `\\cos x + C`,
+      `-\\sin x + C`,
+      `\\tan x + C`,
+      `\\dfrac{\\sin^2 x}{2} + C`,
+      `-\\sin x \\cos x + C`,
+      `\\dfrac{-\\cos^2 x}{2} + C`,
+      `\\cot x + C`,
+    ]
+  },
+  {
+    q: `\\int \\cos x \\, dx`,
+    correct: `\\sin x + C`,
+    wrong: [
+      `-\\sin x + C`,
+      `-\\cos x + C`,
+      `\\tan x + C`,
+      `\\dfrac{\\cos^2 x}{2} + C`,
+      `\\sin x \\cos x + C`,
+      `-\\cot x + C`,
+      `\\dfrac{\\sin^2 x}{2} + C`,
+    ]
+  },
+  {
+    q: `\\int \\tan x \\, dx`,
+    correct: `-\\ln|\\cos x| + C`,
+    wrong: [
+      `\\ln|\\cos x| + C`,
+      `\\ln|\\sin x| + C`,
+      `-\\ln|\\sin x| + C`,
+      `\\dfrac{1}{\\cos^2 x} + C`,
+      `\\dfrac{\\tan^2 x}{2} + C`,
+      `-\\dfrac{1}{\\cos^2 x} + C`,
+      `\\dfrac{\\sin x}{\\cos^2 x} + C`,
+    ]
+  },
+  {
+    q: `\\int \\cot x \\, dx`,
+    correct: `\\ln|\\sin x| + C`,
+    wrong: [
+      `-\\ln|\\sin x| + C`,
+      `\\ln|\\cos x| + C`,
+      `-\\ln|\\cos x| + C`,
+      `-\\dfrac{1}{\\sin^2 x} + C`,
+      `\\dfrac{\\cot^2 x}{2} + C`,
+      `\\dfrac{\\cos x}{\\sin^2 x} + C`,
+      `\\dfrac{1}{\\sin^2 x} + C`,
+    ]
+  },
+  {
+    q: `\\int \\dfrac{1}{\\cos^2 x} \\, dx`,
+    correct: `\\tan x + C`,
+    wrong: [
+      `-\\cot x + C`,
+      `\\sin x + C`,
+      `-\\tan x + C`,
+      `2\\sin x\\cos x + C`,
+      `\\ln|\\cos x| + C`,
+      `\\dfrac{\\sin x}{\\cos^3 x} + C`,
+      `\\dfrac{1}{2\\cos^2 x} + C`,
+    ]
+  },
+  {
+    q: `\\int \\dfrac{1}{\\sin^2 x} \\, dx`,
+    correct: `-\\cot x + C`,
+    wrong: [
+      `\\cot x + C`,
+      `\\tan x + C`,
+      `-\\tan x + C`,
+      `\\ln|\\sin x| + C`,
+      `\\dfrac{1}{\\sin^2 x \\cdot 2} + C`,
+      `-\\dfrac{\\cos x}{\\sin^3 x} + C`,
+      `-\\ln|\\sin x| + C`,
+    ]
+  },
+  {
+    q: `\\int \\dfrac{1}{\\sin x} \\, dx`,
+    correct: `\\ln\\!\\left|\\tan\\dfrac{x}{2}\\right| + C`,
+    wrong: [
+      `\\ln|\\sin x| + C`,
+      `-\\ln|\\cos x| + C`,
+      `\\ln\\!\\left|\\tan\\!\\left(\\dfrac{x}{2}+\\dfrac{\\pi}{4}\\right)\\right| + C`,
+      `-\\cot x + C`,
+      `\\dfrac{1}{\\cos x} + C`,
+      `\\ln|1 - \\cos x| + C`,
+      `-\\ln\\!\\left|\\tan\\dfrac{x}{2}\\right| + C`,
+    ]
+  },
+  {
+    q: `\\int \\dfrac{1}{\\cos x} \\, dx`,
+    correct: `\\ln\\!\\left|\\tan\\!\\left(\\dfrac{x}{2}+\\dfrac{\\pi}{4}\\right)\\right| + C`,
+    wrong: [
+      `\\ln\\!\\left|\\tan\\dfrac{x}{2}\\right| + C`,
+      `\\tan x + C`,
+      `-\\ln|\\cos x| + C`,
+      `\\ln|\\sin x| + C`,
+      `\\dfrac{1}{\\sin x} + C`,
+      `\\ln|1 + \\sin x| + C`,
+      `-\\ln\\!\\left|\\tan\\!\\left(\\dfrac{x}{2}+\\dfrac{\\pi}{4}\\right)\\right| + C`,
+    ]
+  },
+  {
+    q: `\\int \\dfrac{1}{\\sqrt{a^2 - x^2}} \\, dx`,
+    correct: `\\arcsin\\dfrac{x}{a} + C`,
+    wrong: [
+      `\\arccos\\dfrac{x}{a} + C`,
+      `\\dfrac{1}{a}\\arctan\\dfrac{x}{a} + C`,
+      `\\ln\\!\\left|x + \\sqrt{a^2-x^2}\\right| + C`,
+      `-\\arcsin\\dfrac{x}{a} + C`,
+      `\\dfrac{1}{2a}\\ln\\!\\left|\\dfrac{a+x}{a-x}\\right| + C`,
+      `\\arctan\\dfrac{x}{a} + C`,
+      `\\dfrac{x}{a\\sqrt{a^2-x^2}} + C`,
+    ]
+  },
+  {
+    q: `\\int \\dfrac{1}{\\sqrt{x^2 + a^2}} \\, dx`,
+    correct: `\\ln\\!\\left|x + \\sqrt{x^2+a^2}\\right| + C`,
+    wrong: [
+      `\\arcsin\\dfrac{x}{a} + C`,
+      `\\dfrac{1}{a}\\arctan\\dfrac{x}{a} + C`,
+      `\\dfrac{1}{2a}\\ln\\!\\left|\\dfrac{a+x}{a-x}\\right| + C`,
+      `\\arctan\\dfrac{x}{a} + C`,
+      `\\ln\\!\\left|x - \\sqrt{x^2+a^2}\\right| + C`,
+      `-\\ln\\!\\left|x + \\sqrt{x^2+a^2}\\right| + C`,
+      `\\dfrac{x}{a^2\\sqrt{x^2+a^2}} + C`,
+    ]
+  },
+  {
+    q: `\\int \\dfrac{1}{a^2 + x^2} \\, dx`,
+    correct: `\\dfrac{1}{a}\\arctan\\dfrac{x}{a} + C`,
+    wrong: [
+      `\\arctan\\dfrac{x}{a} + C`,
+      `\\dfrac{1}{a}\\arcsin\\dfrac{x}{a} + C`,
+      `\\dfrac{1}{2a}\\ln\\!\\left|\\dfrac{a+x}{a-x}\\right| + C`,
+      `\\ln\\!\\left|x + \\sqrt{x^2+a^2}\\right| + C`,
+      `\\dfrac{1}{a^2}\\arctan\\dfrac{x}{a} + C`,
+      `-\\dfrac{1}{a}\\arctan\\dfrac{x}{a} + C`,
+      `\\dfrac{2x}{a^2+x^2} + C`,
+    ]
+  },
+  {
+    q: `\\int \\dfrac{1}{a^2 - x^2} \\, dx`,
+    correct: `\\dfrac{1}{2a}\\ln\\!\\left|\\dfrac{a+x}{a-x}\\right| + C`,
+    wrong: [
+      `\\dfrac{1}{a}\\arctan\\dfrac{x}{a} + C`,
+      `\\ln\\!\\left|\\dfrac{a+x}{a-x}\\right| + C`,
+      `\\arcsin\\dfrac{x}{a} + C`,
+      `\\dfrac{1}{2a}\\ln\\!\\left|\\dfrac{a-x}{a+x}\\right| + C`,
+      `\\dfrac{1}{2a}\\ln\\!\\left|\\dfrac{x+a}{x-a}\\right| + C`,
+      `\\dfrac{2x}{(a^2-x^2)^2} + C`,
+      `-\\dfrac{1}{2a}\\ln\\!\\left|\\dfrac{a+x}{a-x}\\right| + C`,
+    ]
+  },
+  {
+    q: `\\int \\sqrt{a^2 - x^2} \\, dx`,
+    correct: `\\dfrac{x}{2}\\sqrt{a^2-x^2} + \\dfrac{a^2}{2}\\arcsin\\dfrac{x}{a} + C`,
+    wrong: [
+      `\\dfrac{x}{2}\\sqrt{a^2-x^2} - \\dfrac{a^2}{2}\\arcsin\\dfrac{x}{a} + C`,
+      `\\dfrac{a^2}{2}\\arcsin\\dfrac{x}{a} + C`,
+      `\\dfrac{x}{3}(a^2-x^2)^{3/2} + C`,
+      `\\dfrac{x}{2}\\sqrt{a^2+x^2} + \\dfrac{a^2}{2}\\arcsin\\dfrac{x}{a} + C`,
+      `\\sqrt{a^2-x^2} + \\arcsin\\dfrac{x}{a} + C`,
+      `-\\dfrac{x}{2}\\sqrt{a^2-x^2} + \\dfrac{a^2}{2}\\arcsin\\dfrac{x}{a} + C`,
+      `\\dfrac{x}{2}(a^2-x^2) + \\dfrac{a^2}{2}\\arctan\\dfrac{x}{a} + C`,
+    ]
+  },
+  {
+    q: `\\int \\sqrt{x^2 \\pm a^2} \\, dx`,
+    correct: `\\dfrac{x}{2}\\sqrt{x^2\\pm a^2} \\pm \\dfrac{a^2}{2}\\ln\\!\\left|x+\\sqrt{x^2\\pm a^2}\\right| + C`,
+    wrong: [
+      `\\dfrac{x}{2}\\sqrt{x^2\\pm a^2} + C`,
+      `\\dfrac{a^2}{2}\\ln\\!\\left|x+\\sqrt{x^2\\pm a^2}\\right| + C`,
+      `\\dfrac{x}{3}(x^2\\pm a^2)^{3/2} + C`,
+      `\\dfrac{x}{2}\\sqrt{x^2\\pm a^2} \\mp \\dfrac{a^2}{2}\\ln\\!\\left|x+\\sqrt{x^2\\pm a^2}\\right| + C`,
+      `\\sqrt{x^2\\pm a^2} \\pm \\ln|x| + C`,
+      `\\dfrac{x}{2}(x^2\\pm a^2) \\pm \\dfrac{a^2}{2}\\arctan\\dfrac{x}{a} + C`,
+      `-\\dfrac{x}{2}\\sqrt{x^2\\pm a^2} \\pm \\dfrac{a^2}{2}\\ln\\!\\left|x+\\sqrt{x^2\\pm a^2}\\right| + C`,
+    ]
+  }
+];
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let questions = [];
+let current = 0, score = 0, answered = false;
+
+function init() {
+  questions = shuffle(ALL);
+  current = 0;
+  score = 0;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function render() {
+  answered = false;
+  const q = questions[current];
+
+  document.getElementById('q-num').textContent = `№ ${current + 1}`;
+  document.getElementById('prog-text').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('score-text').textContent = `${score} баллов`;
+  document.getElementById('prog-fill').style.width = `${((current + 1) / questions.length) * 100}%`;
+  document.getElementById('q-formula').innerHTML = `\\(${q.q} = ?\\)`;
+
+  // 6 случайных неправильных + 1 правильный = 7 вариантов
+  const wrongPool = shuffle(q.wrong).slice(0, 6);
+  const opts = shuffle([
+    { tex: q.correct, isCorrect: true },
+    ...wrongPool.map(w => ({ tex: w, isCorrect: false }))
+  ]);
+
+  const wrap = document.getElementById('options');
+  wrap.innerHTML = '';
+  opts.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `\\(${opt.tex}\\)`;
+    btn.onclick = () => answer(btn, opt.isCorrect, q.correct);
+    wrap.appendChild(btn);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('btn-next').className = 'btn-next';
+
+  // reset animation
+  const card = document.getElementById('card');
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = '';
+
+  MathJax.typesetPromise();
+}
+
+// ── ANSWER ─────────────────────────────────────────────────────────────────
+function answer(btn, isCorrect, correctTex) {
+  if (answered) return;
+  answered = true;
+
+  const allBtns = document.querySelectorAll('.option');
+  allBtns.forEach(b => {
+    b.disabled = true;
+    b.classList.add('dimmed');
+  });
+
+  if (isCorrect) {
+    score++;
+    document.getElementById('score-text').textContent = `${score} баллов`;
+    btn.classList.remove('dimmed');
+    btn.classList.add('correct');
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback show ok';
+    fb.textContent = '✓ Верно!';
+  } else {
+    btn.classList.remove('dimmed');
+    btn.classList.add('wrong');
+    // подсветить правильный
+    allBtns.forEach(b => {
+      // сравниваем stripped content
+      const raw = b.innerHTML.replace(/\s+/g, '');
+      const tex = correctTex.replace(/\s+/g, '');
+      if (raw.includes(tex.substring(0, Math.min(tex.length, 20)))) {
+        b.classList.remove('dimmed');
+        b.classList.add('correct');
+      }
+    });
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback show err';
+    fb.innerHTML = `✗ Неверно.<br>Правильный ответ: \\(${correctTex}\\)`;
+    MathJax.typesetPromise([fb]);
+  }
+
+  const btnNext = document.getElementById('btn-next');
+  btnNext.textContent = current < questions.length - 1 ? 'Следующая →' : 'Результат →';
+  btnNext.className = 'btn-next show';
+}
+
+// ── NEXT ───────────────────────────────────────────────────────────────────
+function nextQ() {
+  current++;
+  if (current >= questions.length) showResult();
+  else render();
+}
+
+// ── RESULT ─────────────────────────────────────────────────────────────────
+function showResult() {
+  document.getElementById('quiz-section').style.display = 'none';
+  const pct = score / questions.length;
+  const circumference = 2 * Math.PI * 72; // 452.4
+  const offset = circumference * (1 - pct);
+
+  setTimeout(() => {
+    document.getElementById('ring-fill').style.strokeDashoffset = offset;
+  }, 100);
+
+  document.getElementById('res-num').textContent = `${score}/${questions.length}`;
+
+  const p = Math.round(pct * 100);
+  let msg, sub;
+  if (p === 100) { msg = 'Идеально! 🏆'; sub = 'Все 18 формул выучены на отлично'; }
+  else if (p >= 80) { msg = 'Отличный результат!'; sub = 'Ещё чуть-чуть и будет идеал'; }
+  else if (p >= 60) { msg = 'Хороший прогресс'; sub = 'Повтори формулы, где ошибся'; }
+  else if (p >= 40) { msg = 'Нужно повторить'; sub = 'Больше половины ещё нужно выучить'; }
+  else              { msg = 'Продолжай учить!'; sub = 'Не сдавайся — повтори таблицу ещё раз'; }
+
+  document.getElementById('res-msg').textContent = msg;
+  document.getElementById('res-sub').textContent = sub;
+  document.getElementById('result').className = 'result show';
+}
+
+// ── RESTART ────────────────────────────────────────────────────────────────
+function restart() {
+  document.getElementById('ring-fill').style.strokeDashoffset = 452.4;
+  init();
+  document.getElementById('quiz-section').style.display = 'block';
+  document.getElementById('result').className = 'result';
+  render();
+}
+
+// ── START ──────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  MathJax.startup.promise.then(() => {
+    init();
+    render();
+  });
+});
+</script>
+</body>
+</html>

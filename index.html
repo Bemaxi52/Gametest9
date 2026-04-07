@@ -11,8 +11,8 @@
 </head>
 <body>
 
-    <div class="cursor"></div>
-    <div class="cursor-trail"></div>
+    <div class="cursor" style="display:none"></div>
+    <div class="cursor-trail" style="display:none"></div>
     <canvas id="bgCanvas"></canvas>
     <div class="noise-overlay"></div>
 
@@ -108,6 +108,7 @@
             <div class="scroll-line"></div>
             <span>SCROLL</span>
         </div>
+        
     </section>
 
     <!-- ══════════════ АВТОРЫ (отдельная секция, всегда видна) ══════════════ -->
@@ -241,26 +242,32 @@
                         </div>
                     </div>
                 </div>
-                <div class="game-card mystery-card" data-index="03">
+                <div class="game-card mystery-card" data-index="03" onclick="openIntegralsModal()" style="cursor:pointer;">
                     <div class="card-number">03</div>
                     <div class="game-img">
                         <iframe src="mystery_card.html" frameborder="0" scrolling="no" class="animated-cover" title="Mystery Game Preview"></iframe>
+                        <div class="img-overlay">
+                            <button onclick="event.stopPropagation(); openIntegralsModal()" class="overlay-play-btn" style="background:none;border:none;cursor:pointer;">
+                                <span class="play-icon">▶</span>
+                                <span>ИГРАТЬ</span>
+                            </button>
+                        </div>
                         <div class="card-glow mystery-glow"></div>
                     </div>
                     <div class="game-info">
                         <div class="game-tags">
                             <span class="tag">ADVENTURE</span>
-                            <span class="tag">MYSTERY</span>
-                            <span class="tag wip">В РАЗРАБОТКЕ</span>
+                            <span class="tag">MATH</span>
+                            <span class="tag live">ДОСТУПНА</span>
                         </div>
-                        <h3>Mystery Game</h3>
-                        <p>Загадочное приключение ждёт тебя. Тайны, которые нужно раскрыть. Мир, который дышит.</p>
+                        <h3>Integrals Quiz</h3>
+                        <p>Проверь знания интегралов! Реши задачи на время и докажи, что ты настоящий математик.</p>
                         <div class="game-footer">
-                            <a href="#" class="play-small-btn disabled">
-                                <span>Скоро</span>
-                                <span class="btn-arrow-sm">⏳</span>
-                            </a>
-                            <span class="engine-badge">TBA</span>
+                            <button onclick="event.stopPropagation(); openIntegralsModal()" class="play-small-btn" style="background:rgba(0,255,204,0.04);border:1px solid rgba(0,255,204,0.3);cursor:pointer;">
+                                <span>Играть</span>
+                                <span class="btn-arrow-sm">↗</span>
+                            </button>
+                            <span class="engine-badge">JS</span>
                         </div>
                     </div>
                 </div>
@@ -272,6 +279,16 @@
 
     <footer class="footer">
         <div class="container">
+            <div class="footer-qr">
+                <div class="footer-qr-line"></div>
+                <p class="footer-qr-label">СКАНИРУЙ QR-КОД</p>
+                <p class="footer-qr-sublabel">НАПРАВЬ КАМЕРУ ТЕЛЕФОНА</p>
+                <div class="footer-qr-wrapper">
+                    <img src="qr.png" alt="QR Code" class="footer-qr-img" />
+                    <div class="footer-qr-glow"></div>
+                </div>
+            </div>
+            <div class="footer-qr-line" style="margin: 0 auto 32px; width: 200px;"></div>
             <div class="footer-content">
                 <span class="footer-logo">BEMAXI<span class="title-accent">.</span></span>
                 <span class="footer-copy">© 2026 — Все права защищены</span>
@@ -279,7 +296,88 @@
         </div>
     </footer>
 
-    <!-- ══════════════ CLICKER MODAL ══════════════ -->
+    <style>
+    * { cursor: auto !important; }
+    a, button { cursor: pointer !important; }
+    </style>
+
+    <style>
+    .footer-qr {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        padding: 60px 0 60px;
+        min-height: 90vh;
+    }
+    .footer-qr-line {
+        width: 200px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0,255,204,0.5), transparent);
+    }
+    .footer-qr-label {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 18px;
+        letter-spacing: 8px;
+        color: rgba(0,255,204,0.7);
+        margin: 0;
+        text-align: center;
+    }
+    .footer-qr-sublabel {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 15px;
+        letter-spacing: 3px;
+        color: rgba(255,255,255,0.3);
+        margin: 0;
+        text-align: center;
+    }
+    .footer-qr-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    .footer-qr-img {
+        width: min(70vw, 500px);
+        height: min(70vw, 500px);
+        display: block;
+        border-radius: 16px;
+        filter: none;
+        border: 2px solid rgba(0,255,204,0.3);
+        padding: 16px;
+        background: #fff;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 0 60px rgba(0,255,204,0.15), 0 0 120px rgba(0,255,204,0.06);
+    }
+    .footer-qr-img:hover {
+        transform: scale(1.02);
+        box-shadow: 0 0 80px rgba(0,255,204,0.25), 0 0 160px rgba(0,255,204,0.1);
+    }
+    .footer-qr-glow {
+        position: absolute;
+        inset: -30px;
+        border-radius: 30px;
+        background: radial-gradient(ellipse at center, rgba(0,255,204,0.12) 0%, transparent 70%);
+        pointer-events: none;
+        animation: qrPulse 3s ease-in-out infinite;
+    }
+    @keyframes qrPulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+    </style>
+
+    <!-- ══════════════ INTEGRALS MODAL ══════════════ -->
+    <div id="integralsModal" style="
+        display:none;
+        position:fixed;inset:0;z-index:5000;
+        background:rgba(0,0,0,0.92);
+        backdrop-filter:blur(8px);
+        animation:fadeInModal 0.3s ease;
+    ">
+        <iframe id="integralsFrame" src="" style="
+            width:100%;height:100%;border:none;display:block;
+        " title="Integrals Quiz"></iframe>
+    </div>
     <div id="clickerModal" style="
         display:none;
         position:fixed;inset:0;z-index:5000;
@@ -316,8 +414,22 @@
         frame.src = '';
         document.body.style.overflow = '';
     }
+    function openIntegralsModal() {
+        const modal = document.getElementById('integralsModal');
+        const frame = document.getElementById('integralsFrame');
+        frame.src = 'integrals_quiz_v2.html';
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeIntegralsModal() {
+        const modal = document.getElementById('integralsModal');
+        const frame = document.getElementById('integralsFrame');
+        modal.style.display = 'none';
+        frame.src = '';
+        document.body.style.overflow = '';
+    }
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') closeClickerModal();
+        if (e.key === 'Escape') { closeClickerModal(); closeIntegralsModal(); }
     });
     </script>
 </body>
