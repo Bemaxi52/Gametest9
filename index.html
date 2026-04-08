@@ -23,11 +23,8 @@
         <div class="status-bar">
             <div class="status-bar-inner">
                 <span class="status-online"><span class="status-dot-live"></span>СТУДИЯ АКТИВНА</span>
-                <span class="status-divider">//</span>
                 <span class="status-item">ПРОЕКТОВ В РАБОТЕ: <strong>1</strong></span>
-                <span class="status-divider">//</span>
                 <span class="status-item">ДВИЖОК: <strong>UNITY</strong></span>
-                <span class="status-divider">//</span>
                 <span class="status-item">ЖАНРЫ: <strong>ACTION · ADVENTURE</strong></span>
             </div>
         </div>
@@ -115,7 +112,6 @@
     <section class="authors-section" id="authors">
         <div class="container">
             <div class="section-header">
-                <div class="section-tag">// КОМАНДА</div>
                 <h2 class="section-title">Авторы <span class="title-accent">проекта</span></h2>
                 <p class="section-desc">Люди, которые создают эти миры.</p>
             </div>
@@ -179,9 +175,12 @@
     <section class="catalog" id="catalog">
         <div class="container">
             <div class="section-header">
-                <div class="section-tag">// ПРОЕКТЫ</div>
                 <h2 class="section-title">Каталог <span class="title-accent">игр</span></h2>
                 <p class="section-desc">Каждая игра — отдельная вселенная.</p>
+                <a href="javascript:void(0)" onclick="goToHero()" class="back-to-home-btn">
+                    <span>←</span>
+                    <span>НА ГЛАВНУЮ</span>
+                </a>
             </div>
             <div class="game-grid">
                 <div class="game-card" data-index="01">
@@ -284,7 +283,7 @@
                 <p class="footer-qr-label">СКАНИРУЙ QR-КОД</p>
                 <p class="footer-qr-sublabel">НАПРАВЬ КАМЕРУ ТЕЛЕФОНА</p>
                 <div class="footer-qr-wrapper">
-                    <img src="qr.png" alt="QR Code" class="footer-qr-img" />
+                    <img src="qr-code.png" alt="QR Code" class="footer-qr-img" />
                     <div class="footer-qr-glow"></div>
                 </div>
             </div>
@@ -299,6 +298,27 @@
     <style>
     * { cursor: auto !important; }
     a, button { cursor: pointer !important; }
+    .back-to-home-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 20px;
+        padding: 10px 22px;
+        background: rgba(0,255,204,0.05);
+        border: 1px solid rgba(0,255,204,0.3);
+        color: rgba(0,255,204,0.8);
+        font-family: 'Orbitron', monospace;
+        font-size: 0.6rem;
+        letter-spacing: 0.15em;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+    }
+    .back-to-home-btn:hover {
+        background: rgba(0,255,204,0.12);
+        box-shadow: 0 0 18px rgba(0,255,204,0.2);
+        color: #00ffcc;
+    }
     </style>
 
     <style>
@@ -374,6 +394,22 @@
         backdrop-filter:blur(8px);
         animation:fadeInModal 0.3s ease;
     ">
+        <button onclick="closeIntegralsModal()" style="
+            position:absolute;top:16px;right:20px;z-index:5100;
+            background:rgba(255,0,170,0.1);
+            border:1px solid rgba(255,0,170,0.6);
+            color:#ff00aa;
+            font-family:'Orbitron',monospace;
+            font-size:0.6rem;
+            letter-spacing:0.15em;
+            padding:8px 18px;
+            border-radius:6px;
+            cursor:pointer;
+            transition:background 0.2s,box-shadow 0.2s;
+        "
+        onmouseover="this.style.background='rgba(255,0,170,0.25)';this.style.boxShadow='0 0 16px rgba(255,0,170,0.4)'"
+        onmouseout="this.style.background='rgba(255,0,170,0.1)';this.style.boxShadow='none'"
+        >✕ ВЫЙТИ</button>
         <iframe id="integralsFrame" src="" style="
             width:100%;height:100%;border:none;display:block;
         " title="Integrals Quiz"></iframe>

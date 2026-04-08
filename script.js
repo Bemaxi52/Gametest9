@@ -445,6 +445,7 @@ function goToCatalog() {
     setTimeout(() => {
         heroSection.style.display = 'none';
         if (authorsSection) authorsSection.style.display = 'none';
+        catalogSection.style.display = '';
         catalogSection.classList.add('show');
         document.querySelectorAll('.game-card').forEach((card, i) => {
             card.style.animationDelay = `${i * 0.15}s`;
@@ -454,12 +455,12 @@ function goToCatalog() {
 
 function goToHero() {
     catalogSection.classList.remove('show');
-    setTimeout(() => {
-        catalogSection.style.display = 'none';
-        heroSection.style.display = 'flex';
-        if (authorsSection) authorsSection.style.display = '';
-        requestAnimationFrame(() => { heroSection.classList.remove('fade-out'); });
-    }, 50);
+    catalogSection.style.display = 'none';
+    heroSection.style.display = 'flex';
+    if (authorsSection) authorsSection.style.display = '';
+    heroSection.classList.remove('fade-out');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    history.pushState('', document.title, window.location.pathname + window.location.search);
 }
 
 if (ctaBtn) {
